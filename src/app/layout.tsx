@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { AppProvider } from '@/context/AppContext';
 import Navbar from '@/components/Navbar';
+import ReportItemModal from '@/components/ReportItemModal';
 
 export const metadata: Metadata = {
   title: 'CampusFind | University Lost & Found Recovery Platform',
@@ -21,6 +22,7 @@ export default function RootLayout({
           <div className="flex-1">
             {children}
           </div>
+          <ReportItemModal />
         </AppProvider>
       </body>
     </html>

@@ -1,4 +1,5 @@
 # Agent & Spec files (do not track)
+specs/
 .agents/
 skills-lock.json
 CAPABILITY_MAP.md

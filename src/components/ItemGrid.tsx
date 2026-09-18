@@ -1,9 +1,12 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '@/context/AppContext';
 import ItemCard from '@/components/ItemCard';
+import Pagination from '@/components/Pagination';
 import { SearchX, PlusCircle, RefreshCw } from 'lucide-react';
+
+const PAGE_SIZE = 6;
 
 export default function ItemGrid() {
   const {
@@ -15,6 +18,8 @@ export default function ItemGrid() {
     openReportModal,
     resetAllData,
   } = useApp();
+
+  const [currentPage, setCurrentPage] = useState(1);
 
   // Filter items
   const filteredItems = items.filter((item) => {
@@ -42,6 +47,15 @@ export default function ItemGrid() {
     return true;
   });
 
+  // Reset to page 1 on filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, selectedCategory, selectedLocation, selectedType]);
+
+  const totalPages = Math.ceil(filteredItems.length / PAGE_SIZE) || 1;
+  const startIndex = (currentPage - 1) * PAGE_SIZE;
+  const paginatedItems = filteredItems.slice(startIndex, startIndex + PAGE_SIZE);
+
   return (
     <div className="space-y-4">
       {/* Header bar */}
@@ -52,15 +66,31 @@ export default function ItemGrid() {
             ({filteredItems.length} {filteredItems.length === 1 ? 'item' : 'items'} found)
           </span>
         </h2>
+        {filteredItems.length > PAGE_SIZE && (
+          <span className="text-[11px] text-slate-400 font-medium">
+            Page {currentPage} of {totalPages}
+          </span>
+        )}
       </div>
 
       {/* Grid */}
-      {filteredItems.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredItems.map((item) => (
-            <ItemCard key={item.id} item={item} />
-          ))}
-        </div>
+      {paginatedItems.length > 0 ? (
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {paginatedItems.map((item) => (
+              <ItemCard key={item.id} item={item} />
+            ))}
+          </div>
+
+          {/* Pagination Component (Genesis 2.0 Bonus Requirement) */}
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={filteredItems.length}
+            pageSize={PAGE_SIZE}
+            onPageChange={setCurrentPage}
+          />
+        </>
       ) : (
         /* Empty State */
         <div className="bg-white rounded-3xl border border-dashed border-slate-300 p-12 text-center max-w-lg mx-auto space-y-4 shadow-sm my-6">

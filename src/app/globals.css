@@ -14,3 +14,8 @@ body {
     Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
   min-height: 100vh;
 }
+
+/* Hide Next.js dev overlay indicator during demo */
+nextjs-portal {
+  display: none !important;
+}

@@ -60,11 +60,19 @@ export default function ItemCard({ item }: ItemCardProps) {
     }
   };
 
-  const formattedDate = new Date(item.date).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
+  const formatItemDate = (dateStr: string) => {
+    try {
+      const [year, month, day] = dateStr.split('-');
+      if (year && month && day) {
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const mIdx = parseInt(month, 10) - 1;
+        return `${monthNames[mIdx] || month} ${parseInt(day, 10)}, ${year}`;
+      }
+      return dateStr;
+    } catch {
+      return dateStr;
+    }
+  };
 
   return (
     <div className="group bg-white rounded-2xl border border-slate-200/80 hover:border-slate-300 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col overflow-hidden">
@@ -131,7 +139,7 @@ export default function ItemCard({ item }: ItemCardProps) {
           </div>
           <div className="flex items-center gap-1.5">
             <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-            <span>{item.type === 'lost' ? 'Lost on' : 'Found on'} {formattedDate}</span>
+            <span suppressHydrationWarning>{item.type === 'lost' ? 'Lost on' : 'Found on'} {formatItemDate(item.date)}</span>
           </div>
         </div>
 

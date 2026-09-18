@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Item, Claim, UserPersona, ItemCategory, ItemStatus } from '@/types';
-import { DEMO_PERSONAS } from '@/data/mockData';
+import { DEMO_PERSONAS, INITIAL_ITEMS, INITIAL_CLAIMS } from '@/data/mockData';
 import {
   getStoredItems,
   saveStoredItems,
@@ -46,8 +46,8 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
-  const [items, setItems] = useState<Item[]>([]);
-  const [claims, setClaims] = useState<Claim[]>([]);
+  const [items, setItems] = useState<Item[]>(INITIAL_ITEMS);
+  const [claims, setClaims] = useState<Claim[]>(INITIAL_CLAIMS);
   const [currentPersona, setCurrentPersona] = useState<UserPersona>(DEMO_PERSONAS[0]);
   const [isLoaded, setIsLoaded] = useState(false);
 

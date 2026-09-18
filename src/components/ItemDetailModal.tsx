@@ -34,12 +34,22 @@ export default function ItemDetailModal() {
   const item = selectedItemForDetail;
   const category = CATEGORIES.find(c => c.id === item.category);
 
-  const formattedDate = new Date(item.date).toLocaleDateString('en-US', {
-    weekday: 'long',
-    month: 'long',
-    day: 'numeric',
-    year: 'numeric',
-  });
+  const formatDetailDate = (dateStr: string) => {
+    try {
+      const [year, month, day] = dateStr.split('-');
+      if (year && month && day) {
+        const monthNames = [
+          'January', 'February', 'March', 'April', 'May', 'June',
+          'July', 'August', 'September', 'October', 'November', 'December'
+        ];
+        const mIdx = parseInt(month, 10) - 1;
+        return `${monthNames[mIdx] || month} ${parseInt(day, 10)}, ${year}`;
+      }
+      return dateStr;
+    } catch {
+      return dateStr;
+    }
+  };
 
   const handleMarkReunited = () => {
     updateItemStatus(item.id, 'returned');
@@ -142,7 +152,7 @@ export default function ItemDetailModal() {
 
                 <div className="flex items-center gap-2 pt-1">
                   <Calendar className="w-4 h-4 text-slate-400 shrink-0" />
-                  <span>{formattedDate}</span>
+                  <span suppressHydrationWarning>{formatDetailDate(item.date)}</span>
                 </div>
 
                 <div className="flex items-center gap-2 pt-1 border-t border-slate-200/60">

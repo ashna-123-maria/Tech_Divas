@@ -25,8 +25,7 @@ const DATA_DIR = path.join(process.cwd(), 'data');
 const DB_FILE = path.join(DATA_DIR, 'campus.json');
 
 // Pre-generated bcrypt hash for 'Password123!' with 10 salt rounds:
-// (Generated using bcrypt.hashSync('Password123!', 10))
-const DEFAULT_HASH = '$2a$10$7EqJtq98hPqEX7fNZaFWoO9P5t0lqW6U.a4fX7QeG9c0VzH4B9f5W';
+const DEFAULT_HASH = '$2b$10$ZXBvXYHCBB3.Nd96hbqBA.JvirqKAcJ47AdQz/ZmjFbr39POHdkN2';
 
 const SEED_USERS: DBUser[] = [
   {

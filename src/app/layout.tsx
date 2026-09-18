@@ -3,6 +3,9 @@ import './globals.css';
 import { AppProvider } from '@/context/AppContext';
 import Navbar from '@/components/Navbar';
 import ReportItemModal from '@/components/ReportItemModal';
+import ClaimModal from '@/components/ClaimModal';
+import ItemDetailModal from '@/components/ItemDetailModal';
+import JudgeDemoBanner from '@/components/JudgeDemoBanner';
 
 export const metadata: Metadata = {
   title: 'CampusFind | University Lost & Found Recovery Platform',
@@ -23,6 +26,9 @@ export default function RootLayout({
             {children}
           </div>
           <ReportItemModal />
+          <ClaimModal />
+          <ItemDetailModal />
+          <JudgeDemoBanner />
         </AppProvider>
       </body>
     </html>

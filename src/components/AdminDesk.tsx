@@ -441,7 +441,7 @@ export default function AdminDesk() {
 
                   {items.map((it) => {
                     const isCorrupted =
-                      it.status === 'corrupted_lost_status' ||
+                      (it.status as string) === 'corrupted_lost_status' ||
                       it.title.startsWith('###') ||
                       !it.location ||
                       !it.location.trim() ||

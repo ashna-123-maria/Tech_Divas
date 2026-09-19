@@ -64,23 +64,90 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [selectedItemForClaim, setSelectedItemForClaim] = useState<Item | null>(null);
   const [activeView, setActiveView] = useState<'feed' | 'admin'>('feed');
 
-  // Load initial data
+  // Function to sync with shared backend database
+  const refreshFromServer = async () => {
+    try {
+      const [itemsRes, claimsRes] = await Promise.all([
+        fetch('/api/items?limit=100'),
+        fetch('/api/claims'),
+      ]);
+
+      if (itemsRes.ok) {
+        const itemsJson = await itemsRes.json();
+        if (itemsJson.success && Array.isArray(itemsJson.data)) {
+          // Check if localStorage has items created offline that aren't on server yet
+          const localItems = getStoredItems();
+          const serverIds = new Set(itemsJson.data.map((i: Item) => i.id));
+          const unsyncedItems = localItems.filter(
+            (i: Item) => !serverIds.has(i.id) && i.id.startsWith('item-') && !INITIAL_ITEMS.some(init => init.id === i.id)
+          );
+
+          // Upload any unsynced items to server
+          if (unsyncedItems.length > 0) {
+            for (const unsynced of unsyncedItems) {
+              try {
+                await fetch('/api/items', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(unsynced),
+                });
+              } catch {
+                // ignore
+              }
+            }
+            // Re-fetch after syncing
+            const refetched = await fetch('/api/items?limit=100');
+            if (refetched.ok) {
+              const refetchedJson = await refetched.json();
+              if (refetchedJson.success && Array.isArray(refetchedJson.data)) {
+                setItems(refetchedJson.data);
+                saveStoredItems(refetchedJson.data);
+                return;
+              }
+            }
+          }
+
+          setItems(itemsJson.data);
+          saveStoredItems(itemsJson.data);
+        }
+      }
+
+      if (claimsRes.ok) {
+        const claimsJson = await claimsRes.json();
+        if (claimsJson.success && Array.isArray(claimsJson.data)) {
+          setClaims(claimsJson.data);
+          saveStoredClaims(claimsJson.data);
+        }
+      }
+    } catch {
+      // fallback silently to local storage
+    }
+  };
+
+  // Load initial data and start multi-device real-time sync polling
   useEffect(() => {
     const loadedItems = getStoredItems();
     const loadedClaims = getStoredClaims();
     setItems(loadedItems);
     setClaims(loadedClaims);
     setIsLoaded(true);
+
+    // Initial server fetch & push any unsynced items
+    refreshFromServer();
+
+    // Auto-poll every 3.5s so all connected devices/phones stay in sync in real time
+    const interval = setInterval(refreshFromServer, 3500);
+    return () => clearInterval(interval);
   }, []);
 
-  // Sync items
+  // Sync items to localStorage
   useEffect(() => {
     if (isLoaded) {
       saveStoredItems(items);
     }
   }, [items, isLoaded]);
 
-  // Sync claims
+  // Sync claims to localStorage
   useEffect(() => {
     if (isLoaded) {
       saveStoredClaims(claims);
@@ -98,14 +165,32 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   const addItem = (itemData: Omit<Item, 'id' | 'createdAt' | 'status' | 'reportedBy'> & { reportedBy?: string }): Item => {
+    const tempId = `item-${Date.now()}`;
     const newItem: Item = {
       ...itemData,
-      id: `item-${Date.now()}`,
+      id: tempId,
       createdAt: new Date().toISOString(),
       status: 'active',
       reportedBy: itemData.reportedBy || currentPersona.id,
     };
+
+    // Optimistic local state update
     setItems(prev => [newItem, ...prev]);
+
+    // Persist to shared backend server database
+    fetch('/api/items', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newItem),
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.data) {
+          setItems(prev => prev.map(item => item.id === tempId ? data.data : item));
+        }
+      })
+      .catch(err => console.error('Failed to sync item to server', err));
+
     return newItem;
   };
 
@@ -114,18 +199,48 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (selectedItemForDetail && selectedItemForDetail.id === id) {
       setSelectedItemForDetail(prev => prev ? { ...prev, status } : null);
     }
+
+    // Persist to server
+    fetch(`/api/items/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status }),
+    }).catch(err => console.error('Failed to sync item status to server', err));
   };
 
   const addClaim = (claimData: Omit<Claim, 'id' | 'createdAt' | 'status'>): Claim => {
+    const tempId = `claim-${Date.now()}`;
     const newClaim: Claim = {
       ...claimData,
-      id: `claim-${Date.now()}`,
+      id: tempId,
       createdAt: new Date().toISOString(),
       status: 'pending',
     };
     setClaims(prev => [newClaim, ...prev]);
     // Also update item status to claim_pending
     updateItemStatus(claimData.itemId, 'claim_pending');
+
+    // Persist claim to server
+    fetch('/api/claims', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        itemId: claimData.itemId,
+        claimantId: currentPersona.id,
+        claimantName: claimData.claimantName,
+        claimantEmail: claimData.claimantEmail,
+        claimantPhone: claimData.claimantPhone,
+        proofAnswer: claimData.proofAnswer,
+      }),
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.data) {
+          setClaims(prev => prev.map(c => c.id === tempId ? data.data : c));
+        }
+      })
+      .catch(err => console.error('Failed to sync claim to server', err));
+
     return newClaim;
   };
 
@@ -150,6 +265,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         updateItemStatus(targetedClaim.itemId, 'active');
       }
     }
+
+    // Persist claim update to server
+    fetch(`/api/claims/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status, reviewerNotes: notes }),
+    }).catch(err => console.error('Failed to sync claim status to server', err));
   };
 
   const resetAllData = () => {
@@ -160,6 +282,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setSelectedCategory('all');
     setSelectedLocation('all');
     setSelectedType('all');
+
+    // Reset shared server database
+    fetch('/api/reset', { method: 'POST' }).catch(err => console.error('Failed to reset server database', err));
   };
 
   const openReportModal = (type: 'lost' | 'found') => {

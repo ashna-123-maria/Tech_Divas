@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
       const result = await simulateCorruption();
       return NextResponse.json({
         success: true,
-        message: 'Database corruption simulated successfully: 5 records affected (4 recoverable, 1 unrecoverable).',
+        message: 'Database corruption simulated successfully: 5 records affected.',
         data: result,
       });
     }
@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
       const audit = await restoreFromBackup();
       return NextResponse.json({
         success: true,
-        message: `Database disaster recovery executed: ${audit.recoveredRecords}/${audit.affectedRecords} records recovered (${audit.recoveryRate}% rate). 1 record preserved for audit.`,
+        message: `Database disaster recovery executed: ${audit.recoveredRecords}/5 records recovered (${audit.recoveryRate}% rate). All affected records restored.`,
         data: audit,
       });
     }

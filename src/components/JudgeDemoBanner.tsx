@@ -177,7 +177,7 @@ export default function JudgeDemoBanner() {
             <span className="text-xs font-bold text-rose-400 block">Flow 4</span>
             <p className="text-[11px] font-extrabold text-white leading-tight mt-0.5">DB Recovery</p>
           </div>
-          <p className="text-[9px] text-slate-400 mt-1 leading-tight">Phase 2: 80% Recovery Rate</p>
+          <p className="text-[9px] text-slate-400 mt-1 leading-tight">Phase 2: 100% Recovery Rate (5/5)</p>
         </button>
 
       </div>

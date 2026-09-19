@@ -102,6 +102,7 @@ export async function POST(req: NextRequest) {
     }
 
     const newItem = await createItem({
+      id: body.id,
       title: title.trim(),
       description: description.trim(),
       type: type as ItemType,

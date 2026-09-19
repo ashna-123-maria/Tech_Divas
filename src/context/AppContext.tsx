@@ -84,38 +84,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       if (itemsRes.ok) {
         const itemsJson = await itemsRes.json();
         if (itemsJson.success && Array.isArray(itemsJson.data)) {
-          // Check if localStorage has items created offline that aren't on server yet
-          const localItems = getStoredItems();
-          const serverIds = new Set(itemsJson.data.map((i: Item) => i.id));
-          const unsyncedItems = localItems.filter(
-            (i: Item) => i && typeof i.id === 'string' && !serverIds.has(i.id) && i.id.startsWith('item-') && !INITIAL_ITEMS.some(init => init.id === i.id)
-          );
-
-          // Upload any unsynced items to server
-          if (unsyncedItems.length > 0) {
-            for (const unsynced of unsyncedItems) {
-              try {
-                await fetch('/api/items', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify(unsynced),
-                });
-              } catch {
-                // ignore
-              }
-            }
-            // Re-fetch after syncing
-            const refetched = await fetch('/api/items?limit=100');
-            if (refetched.ok) {
-              const refetchedJson = await refetched.json();
-              if (refetchedJson.success && Array.isArray(refetchedJson.data)) {
-                setItems(refetchedJson.data);
-                saveStoredItems(refetchedJson.data);
-                return;
-              }
-            }
-          }
-
           setItems(itemsJson.data);
           saveStoredItems(itemsJson.data);
         }
@@ -232,7 +200,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   const deleteItem = (id: string) => {
-    setItems(prev => prev.filter(item => item.id !== id));
+    setItems(prev => {
+      const updated = prev.filter(item => item.id !== id);
+      saveStoredItems(updated);
+      return updated;
+    });
     if (selectedItemForDetail && selectedItemForDetail.id === id) {
       setSelectedItemForDetail(null);
     }

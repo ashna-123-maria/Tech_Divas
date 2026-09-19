@@ -228,14 +228,21 @@ export async function findItemById(id: string): Promise<Item | null> {
 }
 
 export async function createItem(
-  itemData: Omit<Item, 'id' | 'createdAt' | 'status'>
+  itemData: Omit<Item, 'id' | 'createdAt' | 'status'> & { id?: string; createdAt?: string; status?: Item['status'] }
 ): Promise<Item> {
   const db = ensureDatabase();
+
+  // If item with this ID already exists, return existing to avoid duplicate insertions
+  if (itemData.id) {
+    const existing = db.items.find((i) => i.id === itemData.id);
+    if (existing) return existing;
+  }
+
   const newItem: Item = {
     ...itemData,
-    id: `item-${Date.now()}`,
-    status: 'active',
-    createdAt: new Date().toISOString(),
+    id: itemData.id || `item-${Date.now()}`,
+    status: itemData.status || 'active',
+    createdAt: itemData.createdAt || new Date().toISOString(),
   };
 
   db.items.unshift(newItem);
@@ -261,6 +268,7 @@ export async function deleteItem(id: string): Promise<boolean> {
   const db = ensureDatabase();
   const initialLen = db.items.length;
   db.items = db.items.filter((i) => i.id !== id);
+  db.claims = db.claims.filter((c) => c.itemId !== id);
   if (db.items.length !== initialLen) {
     writeDatabase(db);
     return true;

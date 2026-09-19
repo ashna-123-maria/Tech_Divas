@@ -44,6 +44,38 @@ export interface Item {
   reportedBy: string; // UserPersona id
   createdAt: string;
   matchedItemId?: string;
+  recoveryStatus?: 'unrecoverable' | 'recovered';
+}
+
+export interface RecordAuditDetail {
+  id: string;
+  name: string;
+  beforeStatus: string;
+  action: string;
+  afterStatus: string;
+  recoverable: boolean;
+}
+
+export interface RecoveryAudit {
+  timestamp: string;
+  totalRecords: number;
+  affectedRecords: number;
+  recoveredRecords: number;
+  unrecoverableRecords: number;
+  recoveryRate: number;
+  records: RecordAuditDetail[];
+}
+
+export interface DatabaseHealth {
+  status: 'healthy' | 'corrupted' | 'recovered';
+  totalRecords: number;
+  affectedRecords: number;
+  recoveredRecords: number;
+  unrecoverableRecords: number;
+  recoveryRate: number;
+  lastBackupTime: string | null;
+  errors: string[];
+  lastAudit?: RecoveryAudit | null;
 }
 
 export interface Claim {

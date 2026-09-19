@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Item, Claim, UserPersona, ItemCategory, ItemStatus } from '@/types';
+import { Item, Claim, UserPersona, ItemCategory, ItemStatus, DatabaseHealth, RecoveryAudit } from '@/types';
 import { DEMO_PERSONAS, INITIAL_ITEMS, INITIAL_CLAIMS } from '@/data/mockData';
 import {
   getStoredItems,
@@ -48,6 +48,12 @@ interface AppContextType {
   setSelectedItemForClaim: (item: Item | null) => void;
   activeView: 'feed' | 'admin';
   setActiveView: (view: 'feed' | 'admin') => void;
+  // Phase 2: Disaster Recovery & Integrity
+  dbHealth: DatabaseHealth | null;
+  fetchDbHealth: () => Promise<void>;
+  simulateDbCorruption: () => Promise<void>;
+  recoverDatabase: () => Promise<void>;
+  isRecovering: boolean;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -72,13 +78,31 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [itemToEdit, setItemToEdit] = useState<Item | null>(null);
   const [activeView, setActiveView] = useState<'feed' | 'admin'>('feed');
+  const [dbHealth, setDbHealth] = useState<DatabaseHealth | null>(null);
+  const [isRecovering, setIsRecovering] = useState(false);
+
+  // Fetch Database Integrity & Health
+  const fetchDbHealth = async () => {
+    try {
+      const res = await fetch('/api/database');
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success) {
+          setDbHealth(json.data);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to fetch DB health:', err);
+    }
+  };
 
   // Function to sync with shared backend database
   const refreshFromServer = async () => {
     try {
-      const [itemsRes, claimsRes] = await Promise.all([
+      const [itemsRes, claimsRes, dbRes] = await Promise.all([
         fetch('/api/items?limit=100'),
         fetch('/api/claims'),
+        fetch('/api/database'),
       ]);
 
       if (itemsRes.ok) {
@@ -96,8 +120,65 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           saveStoredClaims(claimsJson.data);
         }
       }
+
+      if (dbRes.ok) {
+        const dbJson = await dbRes.json();
+        if (dbJson.success) {
+          setDbHealth(dbJson.data);
+        }
+      }
     } catch {
       // fallback silently to local storage
+    }
+  };
+
+  // Simulate Database Corruption (Restricted to Security / Demo)
+  const simulateDbCorruption = async () => {
+    setIsRecovering(true);
+    try {
+      const res = await fetch('/api/database', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'simulate' }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        setDbHealth(json.data);
+        // Refresh items to show corrupted records in feed/admin
+        const itemsRes = await fetch('/api/items?limit=100');
+        if (itemsRes.ok) {
+          const itemsJson = await itemsRes.json();
+          if (itemsJson.success) {
+            setItems(itemsJson.data);
+            saveStoredItems(itemsJson.data);
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Failed to simulate DB corruption:', err);
+    } finally {
+      setIsRecovering(false);
+    }
+  };
+
+  // Execute Disaster Recovery
+  const recoverDatabase = async () => {
+    setIsRecovering(true);
+    try {
+      const res = await fetch('/api/database', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'recover' }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        await refreshFromServer();
+        await fetchDbHealth();
+      }
+    } catch (err) {
+      console.error('Failed to execute disaster recovery:', err);
+    } finally {
+      setIsRecovering(false);
     }
   };
 
@@ -341,6 +422,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setSelectedItemForClaim,
         activeView,
         setActiveView,
+        dbHealth,
+        fetchDbHealth,
+        simulateDbCorruption,
+        recoverDatabase,
+        isRecovering,
       }}
     >
       {children}

@@ -53,6 +53,16 @@ export default function JudgeDemoBanner() {
     setActiveView('admin');
   };
 
+  const runScenario4 = () => {
+    setActiveScenario(4);
+    setCurrentPersona(DEMO_PERSONAS[2]); // Officer Dave
+    setActiveView('admin');
+    setTimeout(() => {
+      const el = document.getElementById('db-recovery-section');
+      if (el) el.scrollIntoView({ behavior: 'smooth' });
+    }, 150);
+  };
+
   if (!isOpen) {
     return (
       <button
@@ -66,7 +76,7 @@ export default function JudgeDemoBanner() {
   }
 
   return (
-    <div className="fixed bottom-4 right-4 sm:right-6 z-40 w-[92vw] sm:w-[440px] bg-slate-900/95 backdrop-blur-md text-white rounded-3xl p-4 shadow-2xl border border-slate-700 animate-in slide-in-from-bottom-3 duration-200">
+    <div className="fixed bottom-4 right-4 sm:right-6 z-40 w-[94vw] sm:w-[540px] bg-slate-900/95 backdrop-blur-md text-white rounded-3xl p-4 shadow-2xl border border-slate-700 animate-in slide-in-from-bottom-3 duration-200">
       
       {/* Header */}
       <div className="flex items-center justify-between pb-2 border-b border-slate-800">
@@ -78,7 +88,7 @@ export default function JudgeDemoBanner() {
             <h4 className="text-xs font-black tracking-wide text-amber-300 uppercase">
               Hackathon Judge Demo Guide
             </h4>
-            <p className="text-[10px] text-slate-400">1-click test flows for 2-minute evaluation</p>
+            <p className="text-[10px] text-slate-400">1-click test flows for evaluation</p>
           </div>
         </div>
 
@@ -103,8 +113,8 @@ export default function JudgeDemoBanner() {
         </div>
       </div>
 
-      {/* 3 Quick Scenarios */}
-      <div className="grid grid-cols-3 gap-2 pt-3">
+      {/* 4 Quick Scenarios */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-3">
         
         {/* Scenario 1 */}
         <button
@@ -135,7 +145,7 @@ export default function JudgeDemoBanner() {
             <span className="text-xs font-bold text-emerald-400 block">Flow 2</span>
             <p className="text-[11px] font-extrabold text-white leading-tight mt-0.5">Report & Quiz</p>
           </div>
-          <p className="text-[9px] text-slate-400 mt-1 leading-tight">Priya logs found item with photo</p>
+          <p className="text-[9px] text-slate-400 mt-1 leading-tight">Priya logs found item</p>
         </button>
 
         {/* Scenario 3 */}
@@ -151,7 +161,23 @@ export default function JudgeDemoBanner() {
             <span className="text-xs font-bold text-indigo-400 block">Flow 3</span>
             <p className="text-[11px] font-extrabold text-white leading-tight mt-0.5">Security Desk</p>
           </div>
-          <p className="text-[9px] text-slate-400 mt-1 leading-tight">Officer verifies proof & confetti!</p>
+          <p className="text-[9px] text-slate-400 mt-1 leading-tight">Officer verifies proof & confetti</p>
+        </button>
+
+        {/* Scenario 4 */}
+        <button
+          onClick={runScenario4}
+          className={`p-2.5 rounded-2xl border text-left transition-all flex flex-col justify-between ${
+            activeScenario === 4
+              ? 'bg-rose-950 border-rose-400 text-white shadow-xs'
+              : 'bg-slate-800/80 border-slate-700 hover:border-slate-500 text-slate-300'
+          }`}
+        >
+          <div>
+            <span className="text-xs font-bold text-rose-400 block">Flow 4</span>
+            <p className="text-[11px] font-extrabold text-white leading-tight mt-0.5">DB Recovery</p>
+          </div>
+          <p className="text-[9px] text-slate-400 mt-1 leading-tight">Phase 2: 80% Recovery Rate</p>
         </button>
 
       </div>

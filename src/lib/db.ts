@@ -932,16 +932,24 @@ export async function restoreFromBackup(): Promise<RecoveryAudit> {
       !currentItem.title ||
       currentItem.title.startsWith('###') ||
       !currentItem.location ||
+      !currentItem.location.trim() ||
       !currentItem.contactEmail ||
       !currentItem.contactEmail.includes('@') ||
+      currentItem.contactEmail === 'damaged-email' ||
       !currentItem.date ||
       currentItem.date.includes('corrupted') ||
       (currentItem.status as any) === 'corrupted_lost_status' ||
-      (currentItem.description && currentItem.description.startsWith('###'));
+      (currentItem.description && currentItem.description.startsWith('###')) ||
+      (currentItem.category as any) === 'corrupted_cat';
 
     if (isCorrupted && backupItem) {
-      // Fully restore from backup!
-      restoredItems.push(backupItem);
+      // Replace the corrupted record with original valid version from backup snapshot
+      const restoredRecord: Item = {
+        ...backupItem,
+        imageUrl: backupItem.imageUrl || currentItem.imageUrl,
+        status: backupItem.status || 'active',
+      };
+      restoredItems.push(restoredRecord);
       recoveredCount++;
       auditRecords.push({
         id: currentItem.id,
@@ -950,7 +958,7 @@ export async function restoreFromBackup(): Promise<RecoveryAudit> {
           ? 'Malformed Title & Corrupted Category'
           : (currentItem.status as any) === 'corrupted_lost_status'
           ? "Invalid Status ('corrupted_lost_status')"
-          : !currentItem.location
+          : !currentItem.location || !currentItem.location.trim()
           ? 'Missing Campus Location & Invalid Email'
           : currentItem.date.includes('corrupted')
           ? 'Corrupted Date Format & Empty Name'
@@ -960,16 +968,28 @@ export async function restoreFromBackup(): Promise<RecoveryAudit> {
         recoverable: true,
       });
     } else if (backupItem) {
-      restoredItems.push(backupItem);
+      // Keep healthy record with photo preserved
+      restoredItems.push({
+        ...backupItem,
+        imageUrl: backupItem.imageUrl || currentItem.imageUrl,
+      });
     } else {
       restoredItems.push(currentItem);
     }
   }
 
+  // Ensure any item in backup that might be missing from currentData is also included
+  for (const backupItem of backupData.items) {
+    if (!restoredItems.some((i) => i.id === backupItem.id)) {
+      restoredItems.push(backupItem);
+      recoveredCount++;
+    }
+  }
+
   const finalSchema: DBSchema = {
-    users: backupData.users || currentData.users,
+    users: (currentData.users && currentData.users.length > 0) ? currentData.users : (backupData.users || SEED_USERS),
     items: restoredItems,
-    claims: backupData.claims || currentData.claims,
+    claims: (currentData.claims && currentData.claims.length > 0) ? currentData.claims : (backupData.claims || INITIAL_CLAIMS),
   };
 
   // Write recovered database to campus.json

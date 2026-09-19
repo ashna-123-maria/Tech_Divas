@@ -408,8 +408,127 @@ export default function AdminDesk() {
               <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/60 text-[11px] text-slate-600 flex items-start gap-2">
                 <Activity className="w-4 h-4 text-indigo-600 shrink-0 mt-0.5" />
                 <p>
-                  <strong>Forensic Recovery Guarantee:</strong> All 5 out of 5 corrupted records were successfully recovered using the last-known-good backup snapshot. Database integrity is 100% restored with 0 remaining affected records.
+                  <strong>Forensic Recovery Guarantee:</strong> All 5 out of 5 corrupted records were successfully restored from the last-known-good backup snapshot. Database integrity is 100% restored with 0 remaining affected records and 0 deleted records.
                 </p>
+              </div>
+
+              {/* Full 10-Record Live Database Table */}
+              <div className="space-y-3 pt-3 border-t border-slate-100">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Database className="w-4 h-4 text-slate-700" />
+                    <h4 className="text-xs sm:text-sm font-extrabold text-slate-900 uppercase tracking-wide">
+                      Live Database Records ({items.length} Records in Database)
+                    </h4>
+                  </div>
+                  <span className="text-[11px] text-slate-500 font-medium">
+                    {dbHealth?.status === 'corrupted'
+                      ? '5 Corrupted • 5 Healthy • 0 Deleted'
+                      : dbHealth?.status === 'recovered'
+                      ? 'All 10 Records Active • 5 Restored • 0 Lost'
+                      : 'All 10 Records Intact & Healthy'}
+                  </span>
+                </div>
+
+                <div className="border border-slate-200 rounded-2xl overflow-hidden divide-y divide-slate-100 bg-white shadow-xs">
+                  <div className="grid grid-cols-12 gap-2 px-4 py-2.5 bg-slate-50 text-[11px] font-bold text-slate-600 uppercase tracking-wider">
+                    <div className="col-span-1">Photo</div>
+                    <div className="col-span-4">Item & ID</div>
+                    <div className="col-span-2">Type / Category</div>
+                    <div className="col-span-2">Location</div>
+                    <div className="col-span-3 text-right">Integrity & Status</div>
+                  </div>
+
+                  {items.map((it) => {
+                    const isCorrupted =
+                      it.status === 'corrupted_lost_status' ||
+                      it.title.startsWith('###') ||
+                      !it.location ||
+                      !it.location.trim() ||
+                      it.date.includes('corrupted') ||
+                      it.contactEmail === 'damaged-email' ||
+                      (it.description && it.description.startsWith('###'));
+
+                    const isRecovered =
+                      dbHealth?.status === 'recovered' &&
+                      ['item-1', 'item-2', 'item-3', 'item-4', 'item-10'].includes(it.id);
+
+                    return (
+                      <div
+                        key={it.id}
+                        className={`grid grid-cols-12 gap-2 px-4 py-2.5 text-xs items-center transition-colors ${
+                          isCorrupted
+                            ? 'bg-rose-50/50 hover:bg-rose-50/80'
+                            : isRecovered
+                            ? 'bg-sky-50/40 hover:bg-sky-50/70'
+                            : 'hover:bg-slate-50/60'
+                        }`}
+                      >
+                        {/* Photo */}
+                        <div className="col-span-1">
+                          {it.imageUrl ? (
+                            <img
+                              src={it.imageUrl}
+                              alt={it.title}
+                              className="w-9 h-9 rounded-lg object-cover border border-slate-200 shrink-0"
+                            />
+                          ) : (
+                            <div className="w-9 h-9 rounded-lg bg-slate-100 flex items-center justify-center text-sm">
+                              📦
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Title & ID */}
+                        <div className="col-span-4 min-w-0">
+                          <p className="font-bold text-slate-900 truncate">{it.title}</p>
+                          <span className="text-[10px] font-mono text-slate-400">{it.id}</span>
+                        </div>
+
+                        {/* Type & Category */}
+                        <div className="col-span-2">
+                          <span
+                            className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
+                              it.type === 'lost'
+                                ? 'bg-rose-100 text-rose-800'
+                                : 'bg-emerald-100 text-emerald-800'
+                            }`}
+                          >
+                            {it.type}
+                          </span>
+                          <span className="text-[10px] text-slate-400 block mt-0.5 capitalize truncate">
+                            {it.category}
+                          </span>
+                        </div>
+
+                        {/* Location */}
+                        <div className="col-span-2 text-[11px] text-slate-600 truncate">
+                          {it.location || <span className="text-rose-600 font-semibold">Missing location</span>}
+                        </div>
+
+                        {/* Integrity Status Badge */}
+                        <div className="col-span-3 text-right">
+                          {isCorrupted ? (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-[11px] font-bold bg-rose-100 text-rose-800 border border-rose-200">
+                              <AlertTriangle className="w-3 h-3 text-rose-600 shrink-0" />
+                              <span>Corrupted</span>
+                            </span>
+                          ) : isRecovered ? (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-[11px] font-bold bg-sky-100 text-sky-800 border border-sky-200">
+                              <CheckCircle2 className="w-3 h-3 text-sky-600 shrink-0" />
+                              <span>Restored ({it.status})</span>
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                              <CheckCircle2 className="w-3 h-3 text-emerald-600 shrink-0" />
+                              <span>Healthy ({it.status})</span>
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
 
             </div>

@@ -29,12 +29,18 @@ interface AppContextType {
   setSelectedLocation: (loc: string | 'all') => void;
   selectedType: 'all' | 'lost' | 'found' | 'returned';
   setSelectedType: (t: 'all' | 'lost' | 'found' | 'returned') => void;
-  resetAllData: () => void;
+  editItem: (id: string, updatedData: Partial<Item>) => void;
+  deleteItem: (id: string) => void;
   // Modals & Active View
   isReportModalOpen: boolean;
   setIsReportModalOpen: (open: boolean) => void;
   reportModalType: 'lost' | 'found';
   openReportModal: (type: 'lost' | 'found') => void;
+  isEditModalOpen: boolean;
+  setIsEditModalOpen: (open: boolean) => void;
+  itemToEdit: Item | null;
+  setItemToEdit: (item: Item | null) => void;
+  openEditModal: (item: Item) => void;
   selectedItemForDetail: Item | null;
   setSelectedItemForDetail: (item: Item | null) => void;
   selectedItemForClaim: Item | null;
@@ -62,6 +68,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [reportModalType, setReportModalType] = useState<'lost' | 'found'>('lost');
   const [selectedItemForDetail, setSelectedItemForDetail] = useState<Item | null>(null);
   const [selectedItemForClaim, setSelectedItemForClaim] = useState<Item | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [itemToEdit, setItemToEdit] = useState<Item | null>(null);
   const [activeView, setActiveView] = useState<'feed' | 'admin'>('feed');
 
   // Function to sync with shared backend database
@@ -208,6 +216,37 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }).catch(err => console.error('Failed to sync item status to server', err));
   };
 
+  const editItem = (id: string, updatedData: Partial<Item>) => {
+    setItems(prev => prev.map(item => item.id === id ? { ...item, ...updatedData } : item));
+    if (selectedItemForDetail && selectedItemForDetail.id === id) {
+      setSelectedItemForDetail(prev => prev ? { ...prev, ...updatedData } : null);
+    }
+
+    // Persist edits to server
+    fetch(`/api/items/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updatedData),
+    }).catch(err => console.error('Failed to update item on server', err));
+  };
+
+  const deleteItem = (id: string) => {
+    setItems(prev => prev.filter(item => item.id !== id));
+    if (selectedItemForDetail && selectedItemForDetail.id === id) {
+      setSelectedItemForDetail(null);
+    }
+
+    // Persist deletion to server
+    fetch(`/api/items/${id}`, {
+      method: 'DELETE',
+    }).catch(err => console.error('Failed to delete item on server', err));
+  };
+
+  const openEditModal = (item: Item) => {
+    setItemToEdit(item);
+    setIsEditModalOpen(true);
+  };
+
   const addClaim = (claimData: Omit<Claim, 'id' | 'createdAt' | 'status'>): Claim => {
     const tempId = `claim-${Date.now()}`;
     const newClaim: Claim = {
@@ -300,6 +339,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         currentPersona,
         setCurrentPersona: handlePersonaChange,
         addItem,
+        editItem,
+        deleteItem,
         updateItemStatus,
         addClaim,
         updateClaimStatus,
@@ -316,6 +357,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setIsReportModalOpen,
         reportModalType,
         openReportModal,
+        isEditModalOpen,
+        setIsEditModalOpen,
+        itemToEdit,
+        setItemToEdit,
+        openEditModal,
         selectedItemForDetail,
         setSelectedItemForDetail,
         selectedItemForClaim,

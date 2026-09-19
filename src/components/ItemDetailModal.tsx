@@ -16,6 +16,9 @@ import {
   User,
   Clock,
   CheckCircle2,
+  Edit3,
+  Trash2,
+  AlertTriangle,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -27,12 +30,19 @@ export default function ItemDetailModal() {
     openReportModal,
     updateItemStatus,
     currentPersona,
+    openEditModal,
+    deleteItem,
   } = useApp();
+
+  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
 
   if (!selectedItemForDetail) return null;
 
   const item = selectedItemForDetail;
   const category = CATEGORIES.find(c => c.id === item.category);
+  const isOwner = currentPersona.id === item.reportedBy;
+  const isSecurity = currentPersona.role === 'security';
+  const canManage = isOwner || isSecurity;
 
   const formatDetailDate = (dateStr: string) => {
     try {
@@ -89,13 +99,74 @@ export default function ItemDetailModal() {
             )}
           </div>
 
-          <button
-            onClick={() => setSelectedItemForDetail(null)}
-            className="p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-200/50 transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            {canManage && (
+              <>
+                <button
+                  onClick={() => openEditModal(item)}
+                  className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-xs"
+                  title="Edit this report"
+                >
+                  <Edit3 className="w-3.5 h-3.5 text-slate-500" />
+                  <span>Edit</span>
+                </button>
+
+                <button
+                  onClick={() => setIsConfirmingDelete(true)}
+                  className="px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-semibold flex items-center gap-1.5 transition-colors border border-rose-200/60 shadow-xs"
+                  title="Delete this report"
+                >
+                  <Trash2 className="w-3.5 h-3.5 text-rose-500" />
+                  <span>Delete</span>
+                </button>
+              </>
+            )}
+
+            <button
+              onClick={() => {
+                setIsConfirmingDelete(false);
+                setSelectedItemForDetail(null);
+              }}
+              className="p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-200/50 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
+
+        {/* Inline Delete Confirmation Banner */}
+        {isConfirmingDelete && (
+          <div className="p-4 bg-rose-50 border-b border-rose-200 text-rose-900 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-in slide-in-from-top-2 duration-150">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-rose-200/70 text-rose-800 flex items-center justify-center shrink-0">
+                <AlertTriangle className="w-4 h-4" />
+              </div>
+              <div>
+                <h4 className="text-xs font-bold">Permanently delete this report?</h4>
+                <p className="text-[11px] text-rose-700">This will remove the item and any related claims from the campus feed.</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+              <button
+                onClick={() => setIsConfirmingDelete(false)}
+                className="px-3 py-1 rounded-lg bg-white border border-rose-200 text-rose-700 text-xs font-semibold hover:bg-rose-100/50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  deleteItem(item.id);
+                  setIsConfirmingDelete(false);
+                  setSelectedItemForDetail(null);
+                }}
+                className="px-3.5 py-1 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-xs transition-all"
+              >
+                Yes, Delete
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Scrollable Content */}
         <div className="p-6 overflow-y-auto space-y-6 flex-1">

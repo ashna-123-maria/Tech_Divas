@@ -3,6 +3,7 @@ import './globals.css';
 import { AppProvider } from '@/context/AppContext';
 import Navbar from '@/components/Navbar';
 import ReportItemModal from '@/components/ReportItemModal';
+import EditItemModal from '@/components/EditItemModal';
 import ClaimModal from '@/components/ClaimModal';
 import ItemDetailModal from '@/components/ItemDetailModal';
 import JudgeDemoBanner from '@/components/JudgeDemoBanner';
@@ -29,6 +30,7 @@ export default function RootLayout({
             {children}
           </div>
           <ReportItemModal />
+          <EditItemModal />
           <ClaimModal />
           <ItemDetailModal />
           <JudgeDemoBanner />

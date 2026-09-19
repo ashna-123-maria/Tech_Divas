@@ -5,8 +5,10 @@ import { useApp } from '@/context/AppContext';
 import { Item, Claim } from '@/types';
 import AnalyticsCards from '@/components/AnalyticsCards';
 import QrTagModal from '@/components/QrTagModal';
+import { DEMO_PERSONAS } from '@/data/mockData';
 import {
   ShieldCheck,
+  ShieldAlert,
   CheckCircle2,
   XCircle,
   Clock,
@@ -17,6 +19,7 @@ import {
   Calendar,
   AlertCircle,
   HelpCircle,
+  Lock,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -27,6 +30,9 @@ export default function AdminDesk() {
     updateClaimStatus,
     updateItemStatus,
     setSelectedItemForDetail,
+    currentPersona,
+    setCurrentPersona,
+    setActiveView,
   } = useApp();
 
   const [tagItem, setTagItem] = useState<Item | null>(null);
@@ -44,9 +50,58 @@ export default function AdminDesk() {
     });
   };
 
-  const handleReject = (claim: Claim) => {
-    updateClaimStatus(claim.id, 'rejected', 'Proof details do not match item characteristics.');
-  };
+  // Role-Based Access Control (RBAC) Guard
+  if (currentPersona.role !== 'security') {
+    const securityPersona = DEMO_PERSONAS.find(p => p.role === 'security');
+
+    return (
+      <div className="max-w-xl mx-auto my-12 p-8 sm:p-10 bg-white rounded-3xl border border-slate-200 shadow-xl text-center space-y-6 animate-in fade-in duration-200">
+        <div className="w-16 h-16 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center mx-auto shadow-sm">
+          <ShieldAlert className="w-8 h-8" />
+        </div>
+
+        <div className="space-y-2">
+          <span className="text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full bg-amber-100 text-amber-800 border border-amber-200">
+            Access Restricted • Security Staff Only
+          </span>
+          <h2 className="text-xl sm:text-2xl font-black text-slate-900">
+            Campus Security Authorization Required
+          </h2>
+          <p className="text-xs sm:text-sm text-slate-600 max-w-md mx-auto leading-relaxed">
+            You are currently browsing as <strong className="text-slate-900">{currentPersona.name}</strong> (<span className="capitalize">{currentPersona.role}</span>). Regular students cannot review proof challenges, release property, or manage locker inventory.
+          </p>
+        </div>
+
+        <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-left space-y-1.5 text-xs text-slate-600">
+          <div className="flex items-center gap-1.5 font-bold text-slate-800">
+            <Lock className="w-3.5 h-3.5 text-amber-600" />
+            <span>Role-Based Access Control (RBAC)</span>
+          </div>
+          <p className="text-[11px] text-slate-500">
+            To review ownership challenges and authorize property releases, please switch to an authorized Security Officer persona or sign in with staff credentials.
+          </p>
+        </div>
+
+        <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+          {securityPersona && (
+            <button
+              onClick={() => setCurrentPersona(securityPersona)}
+              className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-md transition-all flex items-center justify-center gap-2"
+            >
+              <ShieldCheck className="w-4 h-4" />
+              <span>Switch to {securityPersona.name} (Demo Staff)</span>
+            </button>
+          )}
+          <button
+            onClick={() => setActiveView('feed')}
+            className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition-all"
+          >
+            Back to Campus Feed
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 animate-in fade-in duration-200">

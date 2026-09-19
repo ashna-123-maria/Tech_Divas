@@ -109,10 +109,14 @@ export default function Navbar() {
                       ? 'bg-white text-indigo-700 shadow-sm font-bold'
                       : 'hover:text-slate-900'
                   }`}
+                  title={currentPersona.role === 'security' ? 'Campus Security & Claims Desk' : 'Security Desk (Security Staff Role Required)'}
                 >
                   <ShieldCheck className="w-3.5 h-3.5" />
                   <span>Security Desk</span>
-                  {pendingClaimsCount > 0 && (
+                  {currentPersona.role !== 'security' && (
+                    <span className="text-[10px] text-amber-500 font-mono ml-0.5" title="Requires Security Staff Role">🔒</span>
+                  )}
+                  {pendingClaimsCount > 0 && currentPersona.role === 'security' && (
                     <span className="absolute -top-1 -right-1 w-4 h-4 bg-rose-600 text-white text-[10px] rounded-full flex items-center justify-center font-bold">
                       {pendingClaimsCount}
                     </span>

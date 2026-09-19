@@ -31,6 +31,7 @@ interface AppContextType {
   setSelectedType: (t: 'all' | 'lost' | 'found' | 'returned') => void;
   editItem: (id: string, updatedData: Partial<Item>) => void;
   deleteItem: (id: string) => void;
+  resetAllData: () => void;
   // Modals & Active View
   isReportModalOpen: boolean;
   setIsReportModalOpen: (open: boolean) => void;
@@ -87,7 +88,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           const localItems = getStoredItems();
           const serverIds = new Set(itemsJson.data.map((i: Item) => i.id));
           const unsyncedItems = localItems.filter(
-            (i: Item) => !serverIds.has(i.id) && i.id.startsWith('item-') && !INITIAL_ITEMS.some(init => init.id === i.id)
+            (i: Item) => i && typeof i.id === 'string' && !serverIds.has(i.id) && i.id.startsWith('item-') && !INITIAL_ITEMS.some(init => init.id === i.id)
           );
 
           // Upload any unsynced items to server

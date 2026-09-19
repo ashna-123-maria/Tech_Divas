@@ -50,6 +50,10 @@ export default function AdminDesk() {
     });
   };
 
+  const handleReject = (claim: Claim) => {
+    updateClaimStatus(claim.id, 'rejected', 'Proof did not match item details.');
+  };
+
   // Role-Based Access Control (RBAC) Guard
   if (currentPersona.role !== 'security') {
     const securityPersona = DEMO_PERSONAS.find(p => p.role === 'security');

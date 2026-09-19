@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useApp } from '@/context/AppContext';
 import { CATEGORIES } from '@/data/mockData';
 import SuggestedMatches from '@/components/SuggestedMatches';
@@ -40,8 +40,8 @@ export default function ItemDetailModal() {
 
   const item = selectedItemForDetail;
   const category = CATEGORIES.find(c => c.id === item.category);
-  const isOwner = currentPersona.id === item.reportedBy;
-  const isSecurity = currentPersona.role === 'security';
+  const isOwner = Boolean(currentPersona?.id && item.reportedBy && currentPersona.id === item.reportedBy);
+  const isSecurity = currentPersona?.role === 'security';
   const canManage = isOwner || isSecurity;
 
   const formatDetailDate = (dateStr: string) => {
